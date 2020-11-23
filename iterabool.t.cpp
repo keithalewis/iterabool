@@ -126,10 +126,76 @@ int test_fold()
 		++f;
 		assert(!f);
 	}
+	{
+		assert(0 + 1 + 2 == sum(take(3, iota<int>{})));
+		assert(0 == prod(take(3, iota<int>{})));
+		assert(1*2*3 == prod(take(3, iota<int>(1))));
+	}
 
 	return 0;
 }
 int test_fold_ = test_fold();
+
+int test_mask()
+{
+	{
+		auto i = take(9, iota<int>{});
+		auto p = apply([](int i) { return i % 3 == 0; }, i);
+		auto m = mask(p, i);
+		auto m2(m);
+		m = m2;
+		assert(m);
+		assert(*m == 0);
+		++m;
+		assert(m);
+		assert(*m == 3);
+		++m;
+		assert(m);
+		assert(*m == 6);
+		++m;
+		assert(!m);
+		++m;
+		assert(!m);
+	}
+	{
+		auto i = take(9, iota<int>{});
+		auto m = mask(apply([](int i) { return i % 3 == 0; }, i), i);
+		auto m2(m);
+		m = m2;
+		assert(m);
+		assert(*m == 0);
+		++m;
+		assert(m);
+		assert(*m == 3);
+		++m;
+		assert(m);
+		assert(*m == 6);
+		++m;
+		assert(!m);
+		++m;
+		assert(!m);
+	}
+	{
+		auto m = filter([](int i) { return i % 3 == 0; }, take(9, iota<int>{}));
+		auto m2(m);
+		m = m2;
+		assert(m);
+		assert(*m == 0);
+		++m;
+		assert(m);
+		assert(*m == 3);
+		++m;
+		assert(m);
+		assert(*m == 6);
+		++m;
+		assert(!m);
+		++m;
+		assert(!m);
+	}
+
+	return 0;
+}
+int test_mask_ = test_mask();
 
 int main()
 {

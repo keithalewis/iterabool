@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <compare>
 #include <concepts>
+#include <functional>
 #include <iterator>
 #include <type_traits>
 
@@ -25,7 +26,7 @@ namespace iterabool {
 		using iterator_concept = std::forward_iterator_tag;
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
-		
+
 		iota(T t = 0)
 			: t(t)
 		{ }
@@ -40,11 +41,11 @@ namespace iterabool {
 			return t == i.t;
 		}
 
-		operator bool() const 
+		operator bool() const
 		{
 			return true;
 		}
-		T operator*() const 
+		T operator*() const
 		{
 			return t;
 		}
@@ -89,7 +90,7 @@ namespace iterabool {
 			return n;
 		}
 
-		operator bool() const 
+		operator bool() const
 		{
 			return n != 0;
 		}
@@ -164,38 +165,38 @@ namespace iterabool {
 	template<class F, class S,
 		class T = S::value_type,
 		class U = std::invoke_result_t<F, T>>
-	class apply {
+		class apply {
 		F f;
 		S s;
-	public:
-		using iterator_concept = typename S::iterator_concept;
-		using iterator_category = typename S::iterator_category;
-		using value_type = typename U;
+		public:
+			using iterator_concept = typename S::iterator_concept;
+			using iterator_category = typename S::iterator_category;
+			using value_type = typename U;
 
-		apply()
-		{ }
-		apply(const F& f, const S& s)
-			: f(f), s(s)
-		{ }
-		apply(const apply&) = default;
-		apply& operator=(const apply&) = default;
-		~apply()
-		{ }
+			apply()
+			{ }
+			apply(const F& f, const S& s)
+				: f(f), s(s)
+			{ }
+			apply(const apply&) = default;
+			apply& operator=(const apply&) = default;
+			~apply()
+			{ }
 
-		operator bool() const
-		{
-			return s;
-		}
-		U operator*() const
-		{
-			return f(*s);
-		}
-		apply& operator++()
-		{
-			++s;
+			operator bool() const
+			{
+				return s;
+			}
+			U operator*() const
+			{
+				return f(*s);
+			}
+			apply& operator++()
+			{
+				++s;
 
-			return *this;
-		}
+				return *this;
+			}
 	};
 
 	// right fold using binop
@@ -240,6 +241,90 @@ namespace iterabool {
 			return *this;
 		}
 	};
+	// end result of fold
+	template<class Op, forward_sequence S>
+	inline typename S::value_type scan(const Op& op, S s, typename S::value_type t)
+	{
+		while (s) {
+			t = op(t, *s);
+			++s;
+		}
+
+		return t;
+	}
+	template<forward_sequence S>
+	inline typename S::value_type sum(S s)
+	{
+		using T = typename S::value_type;
+
+		return scan(std::plus<T>{}, s, T(0));
+	}
+	template<forward_sequence S>
+	inline typename S::value_type prod(S s)
+	{
+		using T = typename S::value_type;
+
+		return scan(std::multiplies<T>{}, s, T(1));
+	}
+
+	// mask sequence
+	template<class M, class S, class T = S::value_type>
+	class mask {
+		M m;
+		S s;
+		void next()
+		{
+			while (m and s) {
+				if (!*m) {
+					++m;
+					++s;
+				}
+				else {
+					return;
+				}
+			}
+		}
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = T;
+
+		mask(const M& m, const S& s)
+			: m(m), s(s)
+		{
+			next();
+		}
+		mask(const mask&) = default;
+		mask& operator=(const mask&) = default;
+		~mask()
+		{ }
+
+		operator bool() const
+		{
+			return s;
+		}
+		T operator*() const
+		{
+			return *s;
+		}
+		mask& operator++()
+		{
+			if (m and s) {
+				++m;
+				++s;
+			}
+			next();
+
+			return *this;
+		}
+	};
+
+	// filter sequence based on predicate
+	template<class P, class S, class T = S::value_type>
+	inline auto filter(const P& p, S s)
+	{
+		return mask(apply(p, s), s);
+	}
 
 	/*
 	template<sequence S>
