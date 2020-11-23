@@ -57,6 +57,84 @@ namespace iterabool {
 		}
 	};
 
+	// 1, t, t^2, ...
+	template<typename T>
+	class pow {
+		T t, tn;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = T;
+
+		pow(T t)
+			: t(t), tn(1)
+		{ }
+		pow(const pow&) = default;
+		pow& operator=(const pow&) = default;
+		~pow()
+		{ }
+
+		//auto operator<=>(const pow&) = default;
+		bool operator==(const pow& i) const
+		{
+			return t == i.t and tn = i.tn;
+		}
+
+		operator bool() const
+		{
+			return true;
+		}
+		T operator*() const
+		{
+			return tn;
+		}
+		pow& operator++()
+		{
+			tn *= t;
+
+			return *this;
+		}
+	};
+
+	// 1, 1, 1*2, 1*2*3, ...
+	template<typename T>
+	class factorial {
+		T n, n_;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = T;
+
+		factorial()
+			: n(0), n_(1)
+		{ }
+		factorial(const factorial&) = default;
+		factorial& operator=(const factorial&) = default;
+		~factorial()
+		{ }
+
+		//auto operator<=>(const factorial&) = default;
+		bool operator==(const factorial& i) const
+		{
+			return n == i.n and n_ = i.n_;
+		}
+
+		operator bool() const
+		{
+			return true;
+		}
+		T operator*() const
+		{
+			return n_;
+		}
+		factorial& operator++()
+		{
+			n_ *= ++n;
+
+			return *this;
+		}
+	};
+
 	template<class T>
 	class array {
 		size_t n;
@@ -324,6 +402,15 @@ namespace iterabool {
 	inline auto filter(const P& p, S s)
 	{
 		return mask(apply(p, s), s);
+	}
+
+	// stop when value less than epsilon
+	template<class S, class T = S::value_type>
+	inline auto epsilon(S s, T eps = std::numeric_limits<T>::epsilon())
+	{
+		auto p = [eps](T t) { return t * (1 + eps) != t; };
+
+		return filter(p, s);
 	}
 
 	// apply binop to two sequences

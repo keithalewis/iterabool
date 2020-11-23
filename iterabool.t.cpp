@@ -23,6 +23,50 @@ int test_iota()
 }
 int test_iota_ = test_iota();
 
+int test_pow()
+{
+	{
+		auto p = iterabool::pow(2);
+		auto p2(p);
+		p = p2;
+		assert(p);
+		assert(*p == 1);
+		++p;
+		assert(p);
+		assert(*p == 2);
+		++p;
+		assert(p);
+		assert(*p == 4);
+	}
+	return 0;
+}
+int test_pow_ = test_pow();
+
+int test_factorial()
+{
+	{
+		factorial<int> n;
+		auto n2(n);
+		n = n2;
+		assert(n);
+		assert(*n == 1);
+		++n;
+		assert(n);
+		assert(*n == 1);
+		++n;
+		assert(n);
+		assert(*n == 2);
+		++n;
+		assert(n);
+		assert(*n == 6);
+		++n;
+		assert(n);
+	}
+
+	return 0;
+}
+int test_factorial_ = test_factorial();
+
 int test_array()
 {
 	{
@@ -267,6 +311,16 @@ int test_binop()
 		assert(s);
 		assert(*s == 1 + 2);
 	}
+	{
+		auto s = iota(0) * iota(1);
+		auto s2(s);
+		s = s2;
+		assert(s);
+		assert(*s == 0 * 1);
+		++s;
+		assert(s);
+		assert(*s == 1 * 2);
+	}
 
 	return 0;
 }
@@ -274,5 +328,14 @@ int test_binop_ = test_binop();
 
 int main()
 {
+	using iterabool::pow;
+
+	double x = 1;
+	auto xn = pow(x);
+	auto n_ = factorial<double>{};
+	double expx = sum(epsilon(xn/n_));
+	double ex = exp(x);
+	ex -= expx;
+
 	return 0;
 }
