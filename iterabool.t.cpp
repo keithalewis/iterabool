@@ -230,7 +230,7 @@ int test_relations()
 		assert(*eq);
 	}
 	{
-		auto i = iota<int>{};
+		auto i = iota<int>();
 		auto eq = i | i >= 2;
 		assert(eq);
 		assert(*eq == 2);
@@ -242,6 +242,35 @@ int test_relations()
 	return 0;
 }
 int test_relations_ = test_relations();
+
+int test_binop()
+{
+	{
+		auto i0 = iota(0);
+		auto i1 = iota(1);
+		auto s = binop(std::plus<int>{}, i0, i1);
+		auto s2(s);
+		s = s2;
+		assert(s);
+		assert(*s == 0 + 1);
+		++s;
+		assert(s);
+		assert(*s == 1 + 2);
+	}
+	{
+		auto s = iota(0) + iota(1);
+		auto s2(s);
+		s = s2;
+		assert(s);
+		assert(*s == 0 + 1);
+		++s;
+		assert(s);
+		assert(*s == 1 + 2);
+	}
+
+	return 0;
+}
+int test_binop_ = test_binop();
 
 int main()
 {

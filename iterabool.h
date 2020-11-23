@@ -449,3 +449,16 @@ inline auto operator|(const S& s, const M& m)
 	return iterabool::mask(m, s);
 }
 
+#define OPERATOR_BINOP(sym, op) \
+template<iterabool::forward_sequence S, iterabool::forward_sequence T> \
+inline auto operator sym (const S& s, const T& t) \
+{ using U = decltype(op{}(*s,*t)); \
+  return iterabool::binop(op<U>{}, s, t); }
+
+OPERATOR_BINOP(+, std::plus);
+OPERATOR_BINOP(-, std::minus);
+OPERATOR_BINOP(*, std::multiplies);
+OPERATOR_BINOP(/, std::divides);
+OPERATOR_BINOP(%, std::modulus);
+
+#undef OPERATOR_BINOP
