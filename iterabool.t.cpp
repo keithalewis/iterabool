@@ -26,7 +26,7 @@ int test_iota_ = test_iota();
 int test_pow()
 {
 	{
-		auto p = iterabool::pow(2);
+		auto p = power(2);
 		auto p2(p);
 		p = p2;
 		assert(p);
@@ -172,8 +172,8 @@ int test_fold()
 	}
 	{
 		assert(0 + 1 + 2 == sum(take(3, iota<int>{})));
-		assert(0 == prod(take(3, iota<int>{})));
-		assert(1*2*3 == prod(take(3, iota<int>(1))));
+		assert(0 == product(take(3, iota<int>{})));
+		assert(1*2*3 == product(take(3, iota<int>(1))));
 	}
 
 	return 0;
@@ -326,12 +326,23 @@ int test_binop()
 }
 int test_binop_ = test_binop();
 
+int test_epsilon()
+{
+	{
+		auto p = power(0.5);
+		auto e = epsilon(p);
+		size_t n;
+		n = length(e);
+	}
+
+	return 0;
+}
+int test_epsilon_ = test_epsilon();
+
 int main()
 {
-	using iterabool::pow;
-
 	double x = 1;
-	auto xn = pow(x);
+	auto xn = power(x);
 	auto n_ = factorial<double>{};
 	double expx = sum(epsilon(xn/n_));
 	double ex = exp(x);

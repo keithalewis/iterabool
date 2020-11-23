@@ -59,23 +59,23 @@ namespace iterabool {
 
 	// 1, t, t^2, ...
 	template<typename T>
-	class pow {
+	class power {
 		T t, tn;
 	public:
 		using iterator_concept = std::forward_iterator_tag;
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 
-		pow(T t)
+		power(T t)
 			: t(t), tn(1)
 		{ }
-		pow(const pow&) = default;
-		pow& operator=(const pow&) = default;
-		~pow()
+		power(const power&) = default;
+		power& operator=(const power&) = default;
+		~power()
 		{ }
 
-		//auto operator<=>(const pow&) = default;
-		bool operator==(const pow& i) const
+		//auto operator<=>(const power&) = default;
+		bool operator==(const power& i) const
 		{
 			return t == i.t and tn = i.tn;
 		}
@@ -88,7 +88,7 @@ namespace iterabool {
 		{
 			return tn;
 		}
-		pow& operator++()
+		power& operator++()
 		{
 			tn *= t;
 
@@ -243,7 +243,7 @@ namespace iterabool {
 	template<class F, class S,
 		class T = S::value_type,
 		class U = std::invoke_result_t<F, T>>
-		class apply {
+	class apply {
 		F f;
 		S s;
 		public:
@@ -338,11 +338,22 @@ namespace iterabool {
 		return scan(std::plus<T>{}, s, T(0));
 	}
 	template<forward_sequence S>
-	inline typename S::value_type prod(S s)
+	inline typename S::value_type product(S s)
 	{
 		using T = typename S::value_type;
 
 		return scan(std::multiplies<T>{}, s, T(1));
+	}
+
+	template<forward_sequence S>
+	inline size_t length(S s, size_t n = 0)
+	{
+		while (s) {
+			++n;
+			++s;
+		}
+
+		return n;
 	}
 
 	// mask sequence
@@ -379,7 +390,7 @@ namespace iterabool {
 
 		operator bool() const
 		{
-			return s;
+			return m and s;
 		}
 		T operator*() const
 		{
@@ -398,7 +409,7 @@ namespace iterabool {
 	};
 
 	// filter sequence based on predicate
-	template<class P, class S, class T = S::value_type>
+	template<class P, class S>
 	inline auto filter(const P& p, S s)
 	{
 		return mask(apply(p, s), s);
@@ -408,7 +419,7 @@ namespace iterabool {
 	template<class S, class T = S::value_type>
 	inline auto epsilon(S s, T eps = std::numeric_limits<T>::epsilon())
 	{
-		auto p = [eps](T t) { return t * (1 + eps) != t; };
+		auto p = [eps](T t) { return (t * (1 + eps)) != t; };
 
 		return filter(p, s);
 	}
