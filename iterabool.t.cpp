@@ -197,6 +197,52 @@ int test_mask()
 }
 int test_mask_ = test_mask();
 
+int test_relations()
+{
+	{
+		auto i = iota<int>{};
+		auto eq = i < 2;
+		assert(eq);
+		assert(*eq);
+		++eq;
+		assert(eq);
+		assert(*eq);
+		++eq;
+		assert(eq);
+		assert(!*eq);
+		++eq;
+		assert(eq);
+		assert(!*eq);
+	}
+	{
+		auto i = iota<int>{};
+		auto eq = i >= 2;
+		assert(eq);
+		assert(!*eq);
+		++eq;
+		assert(eq);
+		assert(!*eq);
+		++eq;
+		assert(eq);
+		assert(*eq);
+		++eq;
+		assert(eq);
+		assert(*eq);
+	}
+	{
+		auto i = iota<int>{};
+		auto eq = i | i >= 2;
+		assert(eq);
+		assert(*eq == 2);
+		++eq;
+		assert(eq);
+		assert(*eq == 3);
+	}
+
+	return 0;
+}
+int test_relations_ = test_relations();
+
 int main()
 {
 	return 0;

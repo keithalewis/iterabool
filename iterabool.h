@@ -326,6 +326,44 @@ namespace iterabool {
 		return mask(apply(p, s), s);
 	}
 
+	// apply binop to two sequences
+	template<class Op, class S, class T>
+	class binop {
+		Op op;
+		S s;
+		T t;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = decltype(op(*s, *t));
+
+		binop()
+		{ }
+		binop(const Op& op, const S& s, const T& t)
+			: op(op), s(s), t(t)
+		{ }
+		binop(const binop&) = default;
+		binop& operator=(const binop&) = default;
+		~binop()
+		{ }
+
+		operator bool() const
+		{
+			return s and t;
+		}
+		value_type operator*() const
+		{
+			return op(*s, *t);
+		}
+		binop& operator++()
+		{
+			++s;
+			++t;
+
+			return *this;
+		}
+	};
+
 	/*
 	template<sequence S>
 	inline auto coro(S s)
@@ -384,3 +422,30 @@ namespace iterabool {
 
 #endif
 }
+
+template<class Op, iterabool::forward_sequence S>
+inline auto operator_op(const Op& op, S s, typename S::value_type t)
+{
+	return iterabool::apply([t, &op](typename S::value_type si) { return op(si, t); }, s);
+}
+
+#define OPERATOR_OP(sym, op) \
+template<iterabool::forward_sequence S> \
+inline auto operator sym (S s, typename S::value_type t) \
+{ return operator_op(op<typename S::value_type>{}, s, t); }
+
+OPERATOR_OP(== , std::equal_to);
+OPERATOR_OP(!= , std::not_equal_to);
+OPERATOR_OP(< , std::less);
+OPERATOR_OP(<= , std::less_equal);
+OPERATOR_OP(> , std::greater);
+OPERATOR_OP(>= , std::greater_equal);
+
+#undef OPERATOR_OP
+
+template<iterabool::forward_sequence S, iterabool::forward_sequence M>
+inline auto operator|(const S& s, const M& m)
+{
+	return iterabool::mask(m, s);
+}
+
