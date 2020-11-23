@@ -10,13 +10,17 @@
 namespace iterabool {
 
 	template<class S>
-	concept forward_sequence = requires (const S s) {
+	concept forward_sequence = requires (S s) {
+		//std::is_base_of_v<std::forward_iterator_tag, typename S::interator_category>;
+		typename S::iterator_category;
 		typename S::value_type;
 		{ s.operator bool() } -> std::same_as<bool>;
-		{ s.operator*() } -> std::convertible_to<typename S::value_type>;
-		//{ s.operator++() }
-	}
-	; //&& std::input_iterator<S>;
+		{ *s } -> std::convertible_to<typename S::value_type>;
+		{ ++s } -> std::same_as<S&>; // remove_cv???
+	};
+
+	// end sentinal
+	struct done { }; //!!! end
 
 	// t, t + 1, ...
 	template<typename T>
@@ -36,9 +40,21 @@ namespace iterabool {
 		{ }
 
 		//auto operator<=>(const iota&) = default;
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
 		bool operator==(const iota& i) const
 		{
 			return t == i.t;
+		}
+		iota begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
 		}
 
 		operator bool() const
@@ -66,7 +82,7 @@ namespace iterabool {
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 
-		power(T t)
+		power(T t, T tn = 1)
 			: t(t), tn(1)
 		{ }
 		power(const power&) = default;
@@ -75,9 +91,21 @@ namespace iterabool {
 		{ }
 
 		//auto operator<=>(const power&) = default;
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
 		bool operator==(const power& i) const
 		{
 			return t == i.t and tn = i.tn;
+		}
+		power begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
 		}
 
 		operator bool() const
@@ -105,8 +133,8 @@ namespace iterabool {
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 
-		factorial()
-			: n(0), n_(1)
+		factorial(T n = 0, T n_ = 1)
+			: n(n), n_(n_)
 		{ }
 		factorial(const factorial&) = default;
 		factorial& operator=(const factorial&) = default;
@@ -114,9 +142,21 @@ namespace iterabool {
 		{ }
 
 		//auto operator<=>(const factorial&) = default;
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
 		bool operator==(const factorial& i) const
 		{
 			return n == i.n and n_ = i.n_;
+		}
+		factorial begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
 		}
 
 		operator bool() const
@@ -138,17 +178,17 @@ namespace iterabool {
 	template<class T>
 	class array {
 		size_t n;
-		const T* a;
+		T* a;
 	public:
 		using iterator_concept = std::forward_iterator_tag;
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 
-		array()
-			: n(0), a(nullptr)
+		array(size_t n = 0, T* a = nullptr)
+			: n(n), a(a)
 		{ }
 		template<size_t N>
-		array(const T(&a)[N])
+		array(T(&a)[N])
 			: n(N), a(a)
 		{ }
 		array(const array&) = default;
@@ -156,9 +196,22 @@ namespace iterabool {
 		~array()
 		{ }
 
+		bool operator==(const done& s) const
+		{
+			return !operator bool();
+		}
 		bool operator==(const array& s) const
 		{
 			return n == s.n and a == s.a;
+		}
+
+		array begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
 		}
 		//auto operator<=>(const array&) = default;
 
@@ -172,7 +225,7 @@ namespace iterabool {
 		{
 			return n != 0;
 		}
-		/*typename value_type*/ int operator*() const
+		value_type operator*() const
 		{
 			return *a;
 		}
@@ -208,11 +261,24 @@ namespace iterabool {
 		~take()
 		{ }
 
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
 		bool operator==(const take& t) const
 		{
-			return n == t.n and s == t.s;
+			return operator bool() and t and operator*() == *t;
 		}
 		//auto operator<=>(const take&) = default;
+
+		take begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
+		}
 
 		// remaining size
 		size_t size() const
@@ -261,6 +327,24 @@ namespace iterabool {
 			~apply()
 			{ }
 
+			// template<class G, forward_sequence R> ... apply<G, R> ???
+			bool operator==(const done&) const
+			{
+				return !operator bool();
+			}
+			bool operator==(const apply& a) const
+			{
+				return operator bool() and a and operator*() == *a;
+			}
+			apply begin() const
+			{
+				return *this;
+			}
+			const done end() const
+			{
+				return done{};
+			}
+
 			operator bool() const
 			{
 				return s;
@@ -280,7 +364,7 @@ namespace iterabool {
 	// right fold using binop
 	template<class Op, class S, class T = S::value_type>
 	class fold {
-		Op op;
+		Op op; // const Op& ???
 		S s;
 		T t;
 	public:
@@ -302,6 +386,23 @@ namespace iterabool {
 		~fold()
 		{ }
 
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
+		bool operator==(const fold& f) const
+		{
+			return operator bool() and f /*and s == f.s*/ and t == s.t;
+		}
+		fold begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
+		}
+
 		operator bool() const
 		{
 			return s;
@@ -319,6 +420,7 @@ namespace iterabool {
 			return *this;
 		}
 	};
+
 	// end result of fold
 	template<class Op, forward_sequence S>
 	inline typename S::value_type scan(const Op& op, S s, typename S::value_type t)
@@ -387,6 +489,23 @@ namespace iterabool {
 		mask& operator=(const mask&) = default;
 		~mask()
 		{ }
+
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
+		bool operator==(const mask& ms) const
+		{
+			return operator bool() and ms /*and *m == *ms.m*/ and *s == *ms.s;
+		}
+		mask begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
+		}
 
 		operator bool() const
 		{

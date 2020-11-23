@@ -19,11 +19,20 @@ int test_iota()
 		assert(i);
 		assert(*i == 1);
 	}
+	{
+		int n = 0;
+		for (auto i : iota<int>()) {
+			assert(n++ == i);
+			if (n == 3)
+				break;
+		}
+	}
+
 	return 0;
 }
 int test_iota_ = test_iota();
 
-int test_pow()
+int test_power()
 {
 	{
 		auto p = power(2);
@@ -38,9 +47,19 @@ int test_pow()
 		assert(p);
 		assert(*p == 4);
 	}
+	{
+		int n = 1;
+		for (auto p : power(2)) {
+			assert(p == n);
+			n *= 2;
+			if (n == 8)
+				break;
+		}
+	}
+
 	return 0;
 }
-int test_pow_ = test_pow();
+int test_power_ = test_power();
 
 int test_factorial()
 {
@@ -61,6 +80,20 @@ int test_factorial()
 		assert(*n == 6);
 		++n;
 		assert(n);
+	}
+	{
+		factorial f(0);
+		int n = 1, n_ = 1;
+		assert(f);
+		assert(*f == 1);
+		++f;
+		for (auto i : f) {
+			assert(i == n_);
+			++n;
+			n_ *= n;
+			if (n_ == 120)
+				break;
+		}
 	}
 
 	return 0;
@@ -94,6 +127,13 @@ int test_array()
 		assert(c.size() == 0);
 		assert(!c);
 	}
+	{
+		int i[] = { 1,2,3 };
+		int n = 1;
+		for (auto i : array(i)) {
+			assert(i == n++);
+		}
+	}
 
 	return 0;
 }
@@ -124,6 +164,14 @@ int test_take()
 		++c;
 		assert(c.size() == 0);
 		assert(!c);
+	}
+	{
+		int n = 1;
+		take t(3, iota(n));
+		for (auto i : t) {
+			assert(i == n);
+			++n;
+		}
 	}
 
 	return 0;
@@ -235,6 +283,41 @@ int test_mask()
 		assert(!m);
 		++m;
 		assert(!m);
+	}
+	{
+		int m[] = { 0, 1, 0, 0, 1 };
+		auto mi = mask(array(m), iota(0));
+		auto mi2(mi);
+		mi = mi2;
+		assert(mi);
+		assert(length(mi) == 2);
+		assert(mi);
+		assert(length(mi) == 2);
+		assert(*mi == 1);
+		++mi;
+		assert(mi);
+		assert(*mi == 4);
+		++mi;
+		assert(!mi);
+		++mi;
+		assert(!mi);
+	}
+	{
+		int m[] = { 0, 1, 0, 1, 0 };
+		auto mi = mask(array(m), iota(0));
+		int n = 1;
+		for (auto i : mi) {
+			assert(i == n);
+			n += 2;
+		}
+		assert(n == 5);
+		assert(mi);
+		assert(*mi == 1);
+		++mi;
+		assert(mi);
+		assert(*mi == 3);
+		++mi;
+		assert(!mi);
 	}
 
 	return 0;
