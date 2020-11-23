@@ -416,6 +416,9 @@ int test_epsilon()
 		auto e = epsilon(p);
 		size_t n;
 		n = length(e);
+		assert(n == 53);
+		n = length(epsilon(p, 2));
+		assert(n == 52);
 	}
 
 	return 0;
@@ -430,6 +433,7 @@ int main()
 	double expx = sum(epsilon(xn/n_));
 	double ex = exp(x);
 	ex -= expx;
+	assert(ex == -2 * std::numeric_limits<double>::epsilon());
 
 	return 0;
 }

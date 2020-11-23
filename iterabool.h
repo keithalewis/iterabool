@@ -83,7 +83,7 @@ namespace iterabool {
 		using value_type = T;
 
 		power(T t, T tn = 1)
-			: t(t), tn(1)
+			: t(t), tn(tn)
 		{ }
 		power(const power&) = default;
 		power& operator=(const power&) = default;
@@ -298,6 +298,63 @@ namespace iterabool {
 		{
 			if (*this) {
 				--n;
+				++s;
+			}
+
+			return *this;
+		}
+	};
+
+	// truncate when predicate is true
+	template<class P, forward_sequence S>
+	class until {
+		P p;
+		S s;
+	public:
+		using iterator_concept = typename S::iterator_concept;
+		using iterator_category = typename S::iterator_category;
+		using value_type = typename S::value_type;
+
+		until()
+		{ }
+		until(const P& p, const S& s)
+			: p(p), s(s)
+		{ }
+		until(const until&) = default;
+		until& operator=(const until&) = default;
+		~until()
+		{ }
+
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
+		bool operator==(const until& t) const
+		{
+			return operator bool() and t and operator*() == *t;
+		}
+		//auto operator<=>(const until&) = default;
+
+		until begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
+		}
+
+		operator bool() const
+		{
+			return s and !p(*s);
+		}
+		value_type operator*() const
+		{
+			return *s;
+		}
+		until& operator++()
+		{
+			if (*this) {
 				++s;
 			}
 
@@ -535,12 +592,12 @@ namespace iterabool {
 	}
 
 	// stop when value less than epsilon
-	template<class S, class T = S::value_type>
-	inline auto epsilon(S s, T eps = std::numeric_limits<T>::epsilon())
+	template<class S>
+	inline auto epsilon(S s, typename S::value_type eps = 1)
 	{
-		auto p = [eps](T t) { return (t * (1 + eps)) != t; };
+		auto p = [eps](auto t) { return t/eps + 1 == 1; };
 
-		return filter(p, s);
+		return until(p, s);
 	}
 
 	// apply binop to two sequences
@@ -563,6 +620,23 @@ namespace iterabool {
 		binop& operator=(const binop&) = default;
 		~binop()
 		{ }
+
+		bool operator==(const done&) const
+		{
+			return !operator bool();
+		}
+		bool operator==(const binop& b) const
+		{
+			return operator bool() and b and operator*() == *b;
+		}
+		binop begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
+		}
 
 		operator bool() const
 		{
@@ -653,9 +727,9 @@ inline auto operator sym (S s, typename S::value_type t) \
 
 OPERATOR_OP(== , std::equal_to);
 OPERATOR_OP(!= , std::not_equal_to);
-OPERATOR_OP(< , std::less);
+OPERATOR_OP(<  , std::less);
 OPERATOR_OP(<= , std::less_equal);
-OPERATOR_OP(> , std::greater);
+OPERATOR_OP(>  , std::greater);
 OPERATOR_OP(>= , std::greater_equal);
 
 #undef OPERATOR_OP

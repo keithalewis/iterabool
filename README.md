@@ -19,8 +19,10 @@ and overloads some operators for syntactic sugar. For example,
 returns the elements `{0, 1, ...}` that are less than or equal to 2. 
 It can also be written `iota() | iota() <= 2` where `|` is read _given_.
 
-All iterabools have `begin() const` and `const end() const` member functions so they can be
-used with STL routines or in range based for loops.
+All iterabools have `begin() const` and `end() const` member functions so they can be
+used with STL routines or in range based for loops. The `end()` function returns
+a class called `done`. Every iterabool has an `operator==(const done&) const` that
+returns `!operator bool()`.
 
 The real beauty part of this is asynchronous programming becomes trivial using coroutines.
 If `s` is iterabool then
