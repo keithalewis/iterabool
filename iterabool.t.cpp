@@ -634,6 +634,17 @@ int test_tuple()
 }
 int test_tuple_ = test_tuple();
 
+int test_flatten()
+{
+	{
+		//auto a[2] = { take(2, itoa(0)), take(3, iota(2)) };
+		//flatten t(iota(0), iota(1.));
+	}
+
+	return 0;
+}
+int test_flatten_ = test_flatten();
+
 int main()
 {
 	{

@@ -837,6 +837,42 @@ namespace iterabool {
 		{ }
 	};
 
+	template<forward_sequence S>
+	class flatten {
+		S s;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = decltype(*(*s));
+
+		flatten(const S& s)
+			: s(s)
+		{ }
+
+		explicit operator bool() const
+		{
+			return s and *s;
+		}
+		value_type operator*() const
+		{
+			return *(*s);
+		}
+		flatten& operator++()
+		{
+			if (s) {
+				if (*s) {
+					++*s;
+				}
+				else {
+					++s;
+				}
+			}
+
+			return *this;
+		}
+		
+	};
+
 	/*
 	template<sequence S>
 	inline auto coro(S s)
@@ -905,6 +941,13 @@ OPERATOR_BINOP(ge, std::greater_equal);
 OPERATOR_BINOP(le, std::less_equal);
 
 #undef OPERATOR_BINOP
+
+template<iterabool::forward_sequence S>
+inline auto exp(const S& s)
+{
+	return iterabool::apply(exp, s);
+}
+// etc...
 
 template<iterabool::forward_sequence S0, iterabool::forward_sequence Ss>
 inline auto operator,(const S0& s0, const Ss& ss)
