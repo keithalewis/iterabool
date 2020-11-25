@@ -16,11 +16,22 @@ namespace iterabool {
 		typename S::value_type;
 		{ s.operator bool() } -> std::same_as<bool>;
 		{ *s } -> std::convertible_to<typename S::value_type>;
-		{ ++s } -> std::same_as<S&>; // remove_cv???
+		{ ++s } -> std::same_as<S&>;
 	};
 
 	// end sentinal
 	struct done { }; //!!! end
+
+	template<forward_sequence S>
+	inline S begin(const S& s)
+	{
+		return s;
+	}
+	template<forward_sequence S>
+	inline done end(const S&)
+	{
+		return done{};
+	}
 
 	// t, t + 1, ...
 	template<typename T>
@@ -47,14 +58,6 @@ namespace iterabool {
 		bool operator==(const iota& i) const
 		{
 			return t == i.t;
-		}
-		iota begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
 		}
 
 		operator bool() const
@@ -99,14 +102,6 @@ namespace iterabool {
 		{
 			return t == i.t and tn = i.tn;
 		}
-		power begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
-		}
 
 		operator bool() const
 		{
@@ -149,14 +144,6 @@ namespace iterabool {
 		bool operator==(const factorial& i) const
 		{
 			return n == i.n and n_ = i.n_;
-		}
-		factorial begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
 		}
 
 		operator bool() const
@@ -203,15 +190,6 @@ namespace iterabool {
 		bool operator==(const array& s) const
 		{
 			return n == s.n and a == s.a;
-		}
-
-		array begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
 		}
 		//auto operator<=>(const array&) = default;
 
@@ -271,15 +249,6 @@ namespace iterabool {
 		}
 		//auto operator<=>(const take&) = default;
 
-		take begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
-		}
-
 		// remaining size
 		size_t size() const
 		{
@@ -334,15 +303,6 @@ namespace iterabool {
 			return operator bool() and t and operator*() == *t;
 		}
 		//auto operator<=>(const until&) = default;
-
-		until begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
-		}
 
 		operator bool() const
 		{
@@ -451,14 +411,6 @@ namespace iterabool {
 		{
 			return operator bool() and f /*and s == f.s*/ and t == s.t;
 		}
-		fold begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
-		}
 
 		operator bool() const
 		{
@@ -555,14 +507,6 @@ namespace iterabool {
 		{
 			return operator bool() and ms /*and *m == *ms.m*/ and *s == *ms.s;
 		}
-		mask begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
-		}
 
 		operator bool() const
 		{
@@ -629,14 +573,6 @@ namespace iterabool {
 		{
 			return operator bool() and b and operator*() == *b;
 		}
-		binop begin() const
-		{
-			return *this;
-		}
-		const done end() const
-		{
-			return done{};
-		}
 
 		operator bool() const
 		{
@@ -666,52 +602,6 @@ namespace iterabool {
 	}
 	*/
 
-#if 0
-
-	template<sequence S>
-	class counted {
-		S s;
-		size_t n;
-	public:
-		using value_type = typename std::iterator_traits<S>::value_type;
-		counted()
-		{ }
-		counted(S s, size_t n)
-			: s(std::move(s)), n(n)
-		{ }
-		counted(const counted&) = default;
-		counted& operator=(const counted&) = default;
-		counted(counted&&)  = default;
-		counted& operator=(counted&&) = default;
-		~counted()
-		{ }
-
-		size_t size() const
-		{
-			return n;
-		}
-
-		operator bool() const
-		{
-			return n != 0;
-		}
-		value_type operator*() const
-		{
-			return *s;
-		}
-		counted operator++()
-		{
-			if (n != 0) {
-				--n;
-				++s;
-			}
-
-			return *this;
-		}
-	};
-
-
-#endif
 }
 
 template<class Op, iterabool::forward_sequence S>
@@ -725,12 +615,12 @@ template<iterabool::forward_sequence S> \
 inline auto operator sym (S s, typename S::value_type t) \
 { return operator_op(op<typename S::value_type>{}, s, t); }
 
-OPERATOR_OP(== , std::equal_to);
-OPERATOR_OP(!= , std::not_equal_to);
-OPERATOR_OP(<  , std::less);
-OPERATOR_OP(<= , std::less_equal);
-OPERATOR_OP(>  , std::greater);
-OPERATOR_OP(>= , std::greater_equal);
+OPERATOR_OP(==, std::equal_to);
+OPERATOR_OP(!=, std::not_equal_to);
+OPERATOR_OP(< , std::less);
+OPERATOR_OP(<=, std::less_equal);
+OPERATOR_OP(> , std::greater);
+OPERATOR_OP(>=, std::greater_equal);
 
 #undef OPERATOR_OP
 
