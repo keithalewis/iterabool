@@ -4,6 +4,61 @@
 
 using namespace iterabool;
 
+int test_empty()
+{
+	{
+		auto i = take(0, iota(0));
+		assert(i == empty(i));
+	}
+	{
+		auto i = take(1, iota(0));
+		assert(i != empty(i));
+	}
+
+	return 0;
+}
+int test_empty_ = test_empty();
+
+int test_repeat()
+{
+	{
+		assert(all(eq(repeat(3,2), take(3, c(2)))));
+	}
+	{
+		auto i = take(2, iota(0));
+		auto i3 = repeat(3, i);
+		auto i32(i3);
+		i3 = i32;
+
+		for (auto j : i3) {
+			assert(all(eq(j, (i, i, i))));
+		}
+	}
+
+	return 0;
+}
+int test_repeat_ = test_repeat();
+
+int test_duplicate()
+{
+	{
+		auto i = take(2, iota(0));
+		auto i3 = duplicate(3, i);
+		auto i32(i3);
+		i3 = i32;
+
+		auto mod = [](int i) { return i % 2; };
+
+		assert(all(eq(i3, apply(mod, take(6, iota(0))))));
+	}
+	{
+		assert(all(eq(duplicate(3, c(1)), repeat(3, 1))));
+	}
+
+	return 0;
+}
+int test_duplicate_ = test_duplicate();
+
 int test_drop()
 {
 	{
@@ -73,6 +128,21 @@ int test_iota()
 			if (n == 3)
 				break;
 		}
+	}
+	{
+		iota i = take(3, iota(0));
+		auto b = begin(i);
+		assert(b == i);
+		b = b;
+		auto c = *b;
+		c = c;
+		/*
+		int n = 0;
+		for (auto j = begin(i); j != end(i); ++j) {
+			auto j_ = *j;
+			j_ = j_;
+		}
+		*/
 	}
 
 	return 0;
@@ -419,6 +489,11 @@ int test_relations()
 		assert(any(eq(i, i)));
 		assert(!any(ne(i, i)));
 	}
+	{
+		auto i = take(6, iota(0));
+		assert(6 == sum(i | i <= 3));
+		assert(9 == sum(i | i > 3));
+	}
 
 	return 0;
 }
@@ -561,13 +636,27 @@ int test_tuple_ = test_tuple();
 
 int main()
 {
-	double x = 1;
-	auto xn = power(x);
-	auto n_ = factorial<double>{};
-	double expx = sum(epsilon(xn/n_));
-	double ex = exp(x);
-	ex -= expx;
-	assert(ex == -2 * std::numeric_limits<double>::epsilon());
+	{
+		double x = 1;
+		auto xn = power(x);
+		auto n_ = factorial<double>{};
+		double expx = sum(epsilon(xn / n_));
+		double ex = exp(x);
+		ex -= expx;
+		assert(ex == -2 * std::numeric_limits<double>::epsilon());
+	}
+	{
+		double x = 1;
+		assert(exp(x) == sum(epsilon(power(x)/factorial(0.))) - 2 * std::numeric_limits<double>::epsilon());
+	}
+	/*
+	{
+		double constexpr eps = std::numeric_limits<double>::epsilon();
+		double x = 1;
+		auto xn = power(x) / factorial(0.);
+		assert(exp(x) == sum(xn | xn > eps) - 2 * eps );
+	}
+	*/
 
 	return 0;
 }

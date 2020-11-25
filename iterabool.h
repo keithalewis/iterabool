@@ -19,23 +19,61 @@ namespace iterabool {
 		{ ++s } -> std::same_as<S&>;
 	};
 
-	// end sentinal
-	struct done { };
+	// sequence with no elements
+	template<forward_sequence S>
+	struct empty : public S {
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = typename S::value_type;
 
+		empty()
+		{ }
+		empty(const S&)
+		{ }
+		/*
+		empty()
+		{ }
+		empty(const empty&) = default;
+		empty& operator=(const empty&) = default;
+		~empty()
+		{ }
+		*/
+		bool operator==(const S& s) const
+		{
+			return !s;
+		}
+
+		explicit operator bool() const
+		{
+			return false;
+		}
+		value_type operator*() const
+		{
+			return value_type{};
+		}
+		empty& operator++()
+		{
+			return *this;
+		}
+	};
+
+	// end sentinal
+	template<forward_sequence S>
+	inline bool operator==(const S& s, const empty<S>&)
+	{
+		return !s;
+	}
+
+	// STL friendly
 	template<forward_sequence S>
 	inline S begin(const S& s)
 	{
 		return s;
 	}
 	template<forward_sequence S>
-	inline done end(const S&)
+	inline empty<S> end(const S& s)
 	{
-		return done{};
-	}
-	template<forward_sequence S>
-	inline bool operator==(const S&s, const done&)
-	{
-		return !s;
+		return empty(s);
 	}
 
 	template<forward_sequence S>
@@ -75,7 +113,7 @@ namespace iterabool {
 		return s;
 	}
 
-	// t, t, ...
+	// constant: t, t, ...
 	template<typename T>
 	class c {
 		T t;
@@ -112,7 +150,7 @@ namespace iterabool {
 		}
 	};
 
-	// t, t + 1, ...
+	// increment: t, t + 1, ...
 	template<typename T>
 	class iota {
 		T t;
@@ -151,7 +189,7 @@ namespace iterabool {
 		}
 	};
 
-	// 1, t, t^2, ...
+	// powers of t: 1, t, t^2, ...
 	template<typename T>
 	class power {
 		T t, tn;
@@ -160,7 +198,7 @@ namespace iterabool {
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 
-		power(T t, T tn = 1)
+		power(T t = 1, T tn = 1)
 			: t(t), tn(tn)
 		{ }
 		power(const power&) = default;
@@ -224,6 +262,92 @@ namespace iterabool {
 		factorial& operator++()
 		{
 			n_ *= ++n;
+
+			return *this;
+		}
+	};
+
+	// repeat t n times, same as take(n,c(t))
+	template<class T>
+	class repeat {
+		size_t n;
+		T t;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = T;
+
+		repeat()
+		{ }
+		repeat(size_t n, const T& t)
+			: n(n), t(t)
+		{ }
+
+		bool operator==(const repeat& r) const
+		{
+			return operator bool() and r and n == r.n and t == r.t;
+		}
+
+		explicit operator bool() const
+		{
+			return n != 0;
+		}
+		value_type operator*() const
+		{
+			return t;
+		}
+		repeat& operator++()
+		{
+			if (*this) {
+				--n;
+			}
+			
+			return *this;
+		}
+	};
+
+	// duplicate sequence n times, duplicate(n, c(t)) == repeat(n, t)
+	template<forward_sequence S>
+	class duplicate {
+		size_t n;
+		S s0, s;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = typename S::value_type;
+
+		duplicate(size_t n, const S& s)
+			: n(n), s0(s), s(s)
+		{ }
+		duplicate(const duplicate&) = default;
+		duplicate& operator=(const duplicate&) = default;
+		~duplicate()
+		{ }
+
+		bool operator==(const duplicate& d) const
+		{
+			return *this and d and n == d.n and s0 == d.s0 and s == d.s;
+		}
+
+		explicit operator bool() const
+		{
+			return n != 0 and s;
+		}
+		value_type operator*() const
+		{
+			return *s;
+		}
+		duplicate& operator++()
+		{
+			if (s) {
+				++s;
+			}
+			else {
+				if (n != 0) {
+					--n;
+					s = s0;
+				}
+			}
 
 			return *this;
 		}
@@ -408,10 +532,6 @@ namespace iterabool {
 		{
 			return *this;
 		}
-		const done end() const
-		{
-			return done{};
-		}
 
 		explicit operator bool() const
 		{
@@ -525,6 +645,8 @@ namespace iterabool {
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = typename S::value_type;
 
+		mask()
+		{ }
 		mask(const M& m, const S& s)
 			: m(m), s(s)
 		{
