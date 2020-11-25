@@ -365,6 +365,13 @@ int test_relations()
 		assert(eq);
 		assert(*eq == 3);
 	}
+	{
+		auto i = take(3, iota<int>{});
+		assert(all(eq(i, i)));
+		assert(all(ge(i, i)));
+		assert(any(eq(i, i)));
+		assert(!any(ne(i, i)));
+	}
 
 	return 0;
 }
@@ -424,6 +431,72 @@ int test_epsilon()
 	return 0;
 }
 int test_epsilon_ = test_epsilon();
+
+int test_concatenate()
+{
+	{
+		auto i = concatenate(take(2, iota<int>()), take(2, iota<int>()));
+		auto i2(i);
+		i = i2;
+		assert(i);
+		assert(*i == 0);
+		++i;
+		assert(i);
+		assert(*i == 1);
+		++i;
+		assert(i);
+		assert(*i == 0);
+		++i;
+		assert(i);
+		assert(*i == 1);
+		++i;
+		assert(!i);
+		++i;
+		assert(!i);
+	}
+	{
+		auto i_ = take(2, iota<int>());
+		auto i = (i_, i_);
+		auto i2(i);
+		i = i2;
+		assert(i);
+		assert(*i == 0);
+		++i;
+		assert(i);
+		assert(*i == 1);
+		++i;
+		assert(i);
+		assert(*i == 0);
+		++i;
+		assert(i);
+		assert(*i == 1);
+		++i;
+		assert(!i);
+		++i;
+		assert(!i);
+	}
+	{
+		auto i = (take(2, iota<int>()), take(2, iota<int>(2)), take(2, iota<int>(4)));
+		auto i2(i);
+		i = i2;
+		for (int j = 0; j < 6; ++j) {
+			assert(i);
+			assert(*i == j);
+			++i;
+		}
+		assert(!i);
+		++i;
+		assert(!i);
+	}
+	{
+		auto i = (take(2, iota<int>()), take(2, iota<int>(2)), take(2, iota<int>(4)));
+		auto i6 = take(6, iota<int>());
+		//bool b = std::equal(begin(i), end(i), begin(i6), end(i6));
+	}
+
+	return 0;
+}
+int test_concatenate_ = test_concatenate();
 
 int main()
 {
