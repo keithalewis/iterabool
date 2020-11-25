@@ -4,6 +4,53 @@
 
 using namespace iterabool;
 
+int test_drop()
+{
+	{
+		assert(
+			all(
+				take(3, 
+					eq(drop(2, iota(0)), 
+			           iota(2)
+				    )
+			    )
+			)
+		);
+	}
+
+	return 0;
+}
+int test_drop_ = test_drop();
+
+int test_c()
+{
+	{
+		c<int> i;
+		assert(i);
+		c i2(i);
+		assert(i2);
+		assert(i2 == i);
+		i = i2;
+		assert(i == i2);
+		assert(*i == 0);
+		++i;
+		assert(i);
+		assert(*i == 0);
+	}
+	{
+		for (auto i : take(3, c<int>())) {
+			assert(i == 0);
+		}
+	}
+	{
+		assert(all(take(3, c(true))));
+		assert(!any(take(3, c(false))));
+	}
+
+	return 0;
+}
+int test_c_ = test_c();
+
 int test_iota()
 {
 	{
@@ -416,21 +463,25 @@ int test_binop()
 }
 int test_binop_ = test_binop();
 
+template<class T>
 int test_epsilon()
 {
 	{
-		auto p = power(0.5);
+		constexpr T eps = std::numeric_limits<T>::epsilon();
+		constexpr int digits = std::numeric_limits<T>::digits;
+		auto p = power(T(0.5));
 		auto e = epsilon(p);
 		size_t n;
 		n = length(e);
-		assert(n == 53);
-		n = length(epsilon(p, 2));
-		assert(n == 52);
+		assert(n == digits);
+		n = length(epsilon(p, 2*eps));
+		assert(n == digits - 1);
 	}
 
 	return 0;
 }
-int test_epsilon_ = test_epsilon();
+int test_epsilon_d = test_epsilon<double>();
+int test_epsilon_f = test_epsilon<float>();
 
 int test_concatenate()
 {
@@ -497,6 +548,16 @@ int test_concatenate()
 	return 0;
 }
 int test_concatenate_ = test_concatenate();
+
+int test_tuple()
+{
+	{
+		tuple t(iota(0), iota(1.));
+	}
+
+	return 0;
+}
+int test_tuple_ = test_tuple();
 
 int main()
 {

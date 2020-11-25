@@ -63,6 +63,54 @@ namespace iterabool {
 		return n;
 	}
 
+	// drop at most n elements from the beginning
+	template<forward_sequence S>
+	inline S drop(size_t n, S s)
+	{
+		while (n and s) {
+			--n;
+			++s;
+		}
+
+		return s;
+	}
+
+	// t, t, ...
+	template<typename T>
+	class c {
+		T t;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = T;
+
+		c(T t = 0)
+			: t(t)
+		{ }
+		c(const c&) = default;
+		c& operator=(const c&) = default;
+		~c()
+		{ }
+
+		//auto operator<=>(const c&) = default;
+		bool operator==(const c& i) const
+		{
+			return t == i.t;
+		}
+
+		explicit operator bool() const
+		{
+			return true;
+		}
+		T operator*() const
+		{
+			return t;
+		}
+		c& operator++()
+		{
+			return *this;
+		}
+	};
 
 	// t, t + 1, ...
 	template<typename T>
@@ -330,60 +378,61 @@ namespace iterabool {
 	};
 
 	// apply function to sequence
-	template<class F, class S,
-		class T = S::value_type,
-		class U = std::invoke_result_t<F, T>>
+	template<class F, forward_sequence S> //,
 	class apply {
+		using T = typename S::value_type;
+		using U = std::invoke_result_t<F, T>;
 		F f;
 		S s;
-		public:
-			using iterator_concept = typename S::iterator_concept;
-			using iterator_category = typename S::iterator_category;
-			using value_type = typename U;
+	public:
+		using iterator_concept = typename S::iterator_concept;
+		using iterator_category = typename S::iterator_category;
+		using value_type = typename U;
 
-			apply()
-			{ }
-			apply(const F& f, const S& s)
-				: f(f), s(s)
-			{ }
-			apply(const apply&) = default;
-			apply& operator=(const apply&) = default;
-			~apply()
-			{ }
+		apply()
+		{ }
+		apply(const F& f, const S& s)
+			: f(f), s(s)
+		{ }
+		apply(const apply&) = default;
+		apply& operator=(const apply&) = default;
+		~apply()
+		{ }
 
-			// template<class G, forward_sequence R> ... apply<G, R> ???
-			bool operator==(const apply& a) const
-			{
-				return operator bool() and a and operator*() == *a;
-			}
-			apply begin() const
-			{
-				return *this;
-			}
-			const done end() const
-			{
-				return done{};
-			}
+		// template<class G, forward_sequence R> ... apply<G, R> ???
+		bool operator==(const apply& a) const
+		{
+			return operator bool() and a and operator*() == *a;
+		}
+		apply begin() const
+		{
+			return *this;
+		}
+		const done end() const
+		{
+			return done{};
+		}
 
-			explicit operator bool() const
-			{
-				return s.operator bool();
-			}
-			U operator*() const
-			{
-				return f(*s);
-			}
-			apply& operator++()
-			{
-				++s;
+		explicit operator bool() const
+		{
+			return s.operator bool();
+		}
+		value_type operator*() const
+		{
+			return f(*s);
+		}
+		apply& operator++()
+		{
+			++s;
 
-				return *this;
-			}
+			return *this;
+		}
 	};
 
 	// right fold using binop
-	template<class Op, class S, class T = S::value_type>
+	template<class Op, forward_sequence S>
 	class fold {
+		using T = typename S::value_type;
 		Op op; // const Op& ???
 		S s;
 		T t;
@@ -415,7 +464,7 @@ namespace iterabool {
 		{
 			return s.operator bool();
 		}
-		T operator*() const
+		value_type operator*() const
 		{
 			return t;
 		}
@@ -440,22 +489,22 @@ namespace iterabool {
 		return t;
 	}
 	template<forward_sequence S>
-	inline typename S::value_type sum(S s)
+	inline typename S::value_type sum(S s, typename S::value_type t = 0)
 	{
 		using T = typename S::value_type;
 
-		return scan(std::plus<T>{}, s, T(0));
+		return scan(std::plus<T>{}, s, t);
 	}
 	template<forward_sequence S>
-	inline typename S::value_type product(S s)
+	inline typename S::value_type product(S s, typename S::value_type t = 1)
 	{
 		using T = typename S::value_type;
 
-		return scan(std::multiplies<T>{}, s, T(1));
+		return scan(std::multiplies<T>{}, s, t);
 	}
 
 	// select items using mask
-	template<class M, class S, class T = S::value_type>
+	template<forward_sequence M, forward_sequence S>
 	class mask {
 		M m;
 		S s;
@@ -474,7 +523,7 @@ namespace iterabool {
 	public:
 		using iterator_concept = std::forward_iterator_tag;
 		using iterator_category = std::forward_iterator_tag;
-		using value_type = T;
+		using value_type = typename S::value_type;
 
 		mask(const M& m, const S& s)
 			: m(m), s(s)
@@ -495,7 +544,7 @@ namespace iterabool {
 		{
 			return m.operator bool() and s.operator bool();
 		}
-		T operator*() const
+		value_type operator*() const
 		{
 			return *s;
 		}
@@ -512,17 +561,18 @@ namespace iterabool {
 	};
 
 	// filter sequence based on predicate
-	template<class P, class S>
+	template<class P, forward_sequence S>
 	inline auto filter(const P& p, S s)
 	{
 		return mask(apply(p, s), s); //??? make class
 	}
 
 	// stop when value less than epsilon
-	template<class S>
-	inline auto epsilon(S s, typename S::value_type eps = 1)
+	template<class S, class T = S::value_type>
+		requires forward_sequence<S> && std::floating_point<T>
+	inline auto epsilon(S s, T eps = std::numeric_limits<T>::epsilon())
 	{
-		auto p = [eps](auto t) { return t/eps + 1 == 1; };
+		auto p = [eps](auto t) { return abs(t) < eps; };
 
 		return until(p, s);
 	}
@@ -611,6 +661,58 @@ namespace iterabool {
 
 			return *this;
 		}
+	};
+
+	template<forward_sequence S>
+	class lift {
+		S s;
+		bool once;
+	public:
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = S;
+
+		lift(const S& s)
+			: s(s), once(true)
+		{ }
+		lift(const lift&) = default;
+		lift& operator=(const lift&) = default;
+		~lift()
+		{ }
+
+		bool operator==(const lift& o) const
+		{
+			return once == o.once and s = o.s;
+		}
+
+		explicit operator bool() const
+		{
+			return once;
+		}
+		value_type operator*() const
+		{
+			return s;
+		}
+		lift& operator++()
+		{
+			once = false;
+
+			return *this;
+		}
+	};
+
+	// sequence of sequences
+	template<forward_sequence... Ss>
+	class tuple {
+		std::tuple<Ss...> ss;
+	public:
+		tuple(const Ss&... ss)
+			: ss(ss...)
+		{ }
+		tuple(const tuple&) = default;
+		tuple& operator=(const tuple&) = default;
+		~tuple()
+		{ }
 	};
 
 	/*
