@@ -50,6 +50,20 @@ namespace iterabool {
 		return s.operator bool() ? (*s or any(++s)) : false;
 	}
 
+	// number of items in sequence
+	// length(s, length(t)) = length(s) + length(t)
+	template<forward_sequence S>
+	inline size_t length(S s, size_t n = 0)
+	{
+		while (s) {
+			++n;
+			++s;
+		}
+
+		return n;
+	}
+
+
 	// t, t + 1, ...
 	template<typename T>
 	class iota {
@@ -438,18 +452,6 @@ namespace iterabool {
 		using T = typename S::value_type;
 
 		return scan(std::multiplies<T>{}, s, T(1));
-	}
-
-	// number of items in sequence
-	template<forward_sequence S>
-	inline size_t length(S s, size_t n = 0)
-	{
-		while (s) {
-			++n;
-			++s;
-		}
-
-		return n;
 	}
 
 	// select items using mask
