@@ -9,9 +9,11 @@
 
 namespace iterabool {
 
+	// forward iterator with operator bool to detect the end
 	template<class S>
 	concept forward_sequence = requires (S s) {
 		//std::is_base_of_v<std::forward_iterator_tag, typename S::interator_category>;
+		typename S::iterator_concept;
 		typename S::iterator_category;
 		typename S::value_type;
 		{ s.operator bool() } -> std::same_as<bool>;
@@ -19,7 +21,7 @@ namespace iterabool {
 		{ ++s } -> std::same_as<S&>;
 	};
 
-	// sequence with no elements
+	// sequence with no elements used as end sentinal
 	template<forward_sequence S>
 	struct empty : public S {
 		using iterator_concept = std::forward_iterator_tag;
@@ -50,12 +52,6 @@ namespace iterabool {
 		}
 	};
 
-	// end sentinal
-	template<forward_sequence S>
-	inline bool operator==(const S& s, const empty<S>&)
-	{
-		return !s;
-	}
 
 	// STL friendly
 	template<forward_sequence S>
@@ -63,20 +59,27 @@ namespace iterabool {
 	{
 		return s;
 	}
+	// end sentinal
 	template<forward_sequence S>
 	inline empty<S> end(const S& s)
 	{
 		return empty(s);
 	}
+	// for (auto i = begin(); i != end(); ++i) works
+	template<forward_sequence S>
+	inline bool operator==(const S& s, const empty<S>&)
+	{
+		return !s;
+	}
 
-	// every element conertible to true
+	// every element is convertible to true
 	template<forward_sequence S>
 	inline constexpr bool all(S s)
 	{
 		return s.operator bool() ? (*s and all(++s)) : true;
 	}
 
-	
+	// some element is convertible to true
 	template<forward_sequence S>
 	inline constexpr bool any(S s)
 	{
@@ -184,7 +187,7 @@ namespace iterabool {
 		}
 	};
 
-	// powers of t: 1, t, t^2, ...
+	// powers of t: tn, tn*t, tn*t^2, ...
 	template<typename T>
 	class power {
 		T t, tn;
@@ -294,7 +297,7 @@ namespace iterabool {
 		}
 	};
 
-	// repeat t n times, same as take(n,c(t))
+	// repeat t n times more efficiently than take(n,c(t))
 	template<class T>
 	class repeat {
 		size_t n;
@@ -334,7 +337,7 @@ namespace iterabool {
 		}
 	};
 
-	// duplicate sequence n times, duplicate(n, c(t)) == repeat(n, t)
+	// duplicate sequence n times, duplicate(n, unit(t)) == repeat(n, t)
 	template<forward_sequence S>
 	class duplicate {
 		size_t n;
@@ -378,6 +381,7 @@ namespace iterabool {
 		}
 	};
 
+	// convert array to sequence
 	template<class T>
 	class array {
 		size_t n;
@@ -501,7 +505,7 @@ namespace iterabool {
 
 		explicit operator bool() const
 		{
-			return s and static_cast<bool>(!p(*s));
+			return s and !p(*s);
 		}
 		value_type operator*() const
 		{
@@ -509,7 +513,7 @@ namespace iterabool {
 		}
 		until& operator++()
 		{
-			if (*this) {
+			if (s) {
 				++s;
 			}
 
@@ -605,13 +609,14 @@ namespace iterabool {
 		}
 		fold& operator++()
 		{
-			if (++s) {
+			if (s and ++s) {
 				t = op(t, *s);
 			}
 
 			return *this;
 		}
 	};
+
 	// end result of fold
 	template<class Op, forward_sequence S>
 	inline typename S::value_type scan(const Op& op, S s, typename S::value_type t)
@@ -641,6 +646,7 @@ namespace iterabool {
 		S s;
 		void next()
 		{
+			// skip false mask values
 			while (m and s) {
 				if (!*m) {
 					++m;
@@ -668,10 +674,7 @@ namespace iterabool {
 		~mask()
 		{ }
 
-		bool operator==(const mask& ms) const
-		{
-			return *this and ms /*and *m == *ms.m*/ and *s == *ms.s;
-		}
+		auto operator<=>(const mask&) const = default;
 
 		explicit operator bool() const
 		{
@@ -705,12 +708,12 @@ namespace iterabool {
 		requires forward_sequence<S> && std::floating_point<T>
 	inline auto epsilon(S s, T eps = std::numeric_limits<T>::epsilon())
 	{
-		auto p = [eps](auto t) { return abs(t) < eps; };
+		auto p = [eps](T t) { return abs(t) < eps; };
 
 		return until(p, s);
 	}
 
-	// apply binop to two sequences
+	// apply binary operator to two sequences
 	template<class Op, forward_sequence S, forward_sequence T>
 	class binop {
 		Op op;
@@ -733,7 +736,7 @@ namespace iterabool {
 
 		bool operator==(const binop& b) const
 		{
-			return *this and b and operator*() == *b;
+			return *this and b and operator*() == *b; // op???
 		}
 
 		explicit operator bool() const
@@ -753,6 +756,7 @@ namespace iterabool {
 		}
 	};
 
+	// concatenate two sequences
 	template<forward_sequence S0, forward_sequence S1,
 		class T = std::common_type_t<typename S0::value_type, typename S1::value_type>>
 	class concatenate {
@@ -771,10 +775,7 @@ namespace iterabool {
 		~concatenate()
 		{ }
 
-		bool operator==(const concatenate& s) const
-		{
-			return s0 == s.s0 and s1 == s.s1;
-		}
+		auto operator<=>(const concatenate& s) const = default;
 
 		explicit operator bool() const
 		{
@@ -852,6 +853,9 @@ namespace iterabool {
 		tuple& operator=(const tuple&) = default;
 		~tuple()
 		{ }
+		// operator bool() const ???
+		// operator*() const ???
+		// operator++() ???
 	};
 
 	// sequence of sequences to a sequence
@@ -891,12 +895,12 @@ namespace iterabool {
 		
 	};
 
-	/*
+	/* make a sequence concurrent
 	template<sequence S>
 	inline auto coro(S s)
 	{
 		while (s) {
-			yield* s;
+			co_yield* s;
 			++s;
 		}
 	}
@@ -905,7 +909,7 @@ namespace iterabool {
 }
 
 template<class Op, iterabool::forward_sequence S>
-inline auto operator_op(const Op& op, S s, typename S::value_type t)
+inline auto operator_binop(const Op& op, S s, typename S::value_type t)
 {
 	return iterabool::apply([t, &op](typename S::value_type si) { return op(si, t); }, s);
 }
@@ -913,7 +917,7 @@ inline auto operator_op(const Op& op, S s, typename S::value_type t)
 #define OPERATOR_OP(sym, op) \
 template<iterabool::forward_sequence S> \
 inline auto operator sym (S s, typename S::value_type t) \
-{ return operator_op(op<typename S::value_type>{}, s, t); }
+{ return operator_binop(op<typename S::value_type>{}, s, t); }
 
 OPERATOR_OP(==, std::equal_to);
 OPERATOR_OP(!=, std::not_equal_to);

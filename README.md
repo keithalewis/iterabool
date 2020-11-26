@@ -2,8 +2,8 @@
 
 This has got to be the dumbest name for a library ever. Better suggestions welcome.
 
-This header only library uses C++ concepts to make iterators easier to use by
-adding the member function `operator bool() const`. This is not a new idea.
+This header only library uses C++20 to make iterators easier to use by
+adding the member function `explicit operator bool() const`. This is not a new idea.
 Many other languages use something similar, in particular C# where it is used
 to make [`LINQ`](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/)
 the coolest thing since button shoes.
@@ -19,10 +19,12 @@ and overloads some operators for syntactic sugar. For example,
 returns the elements `{0, 1, ...}` that are less than or equal to 2. 
 It can also be written `iota() | iota() <= 2` where `|` is read _given_.
 
-All iterabools have `begin() const` and `end() const` member functions so they can be
+The global `begin()` and `end()` functions can be
 used with STL routines or in range based for loops. The `end()` function returns
-a class called `done`. Every iterabool has an `operator==(const done&) const` that
-returns `!operator bool()`.
+a class called `empty`. The global function `operator==(const S& s, const empty<S>&)`
+asks if the iterabool `s` is done by calling `!s.operator bool()`.
+Since `empty<S>` publicly inherits from `S` there is no need for `range` library
+gyrations where end sentinals can have a different type than the iterator.
 
 The real beauty part of this is asynchronous programming becomes trivial using coroutines.
 If `s` is iterabool then
@@ -34,4 +36,4 @@ auto coro(S s) {
 	}
 }
 ```
-leverages the genious compiler writers handiwork to create multitasking code.
+leverages compiler writers handiwork to create multitasking code.
