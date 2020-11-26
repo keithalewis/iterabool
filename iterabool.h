@@ -76,14 +76,14 @@ namespace iterabool {
 	template<forward_sequence S>
 	inline constexpr bool all(S s)
 	{
-		return s.operator bool() ? (*s and all(++s)) : true;
+		return s ? (*s and all(++s)) : true;
 	}
 
 	// some element is convertible to true
 	template<forward_sequence S>
 	inline constexpr bool any(S s)
 	{
-		return s.operator bool() ? (*s or any(++s)) : false;
+		return s ? (*s or any(++s)) : false;
 	}
 
 	// number of items in sequence
@@ -97,6 +97,11 @@ namespace iterabool {
 		}
 
 		return n;
+	}
+	template<forward_sequence S>
+	inline size_t size(S s, size_t n = 0)
+	{
+		return length(s, n);
 	}
 
 	// drop at most n elements from the beginning
@@ -416,6 +421,10 @@ namespace iterabool {
 			return n != 0;
 		}
 		value_type operator*() const
+		{
+			return *a;
+		}
+		value_type& operator*()
 		{
 			return *a;
 		}
@@ -783,7 +792,11 @@ namespace iterabool {
 		}
 		value_type operator*() const
 		{
-			return s0 ? *s0 : *s1;
+			if (s0) {
+				return *s0;
+			}
+
+			return *s1;
 		}
 		concatenate& operator++()
 		{
@@ -802,14 +815,13 @@ namespace iterabool {
 	template<forward_sequence S>
 	class unit {
 		S s;
-		bool once;
 	public:
 		using iterator_concept = std::forward_iterator_tag;
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = S;
 
 		unit(const S& s)
-			: s(s), once(true)
+			: s(s)
 		{ }
 		unit(const unit&) = default;
 		unit& operator=(const unit&) = default;
@@ -820,7 +832,7 @@ namespace iterabool {
 
 		explicit operator bool() const
 		{
-			return once;
+			return !!s;
 		}
 		value_type operator*() const
 		{
@@ -828,7 +840,7 @@ namespace iterabool {
 		}
 		unit& operator++()
 		{
-			once = false;
+			s = empty(s);
 
 			return *this;
 		}
@@ -873,7 +885,7 @@ namespace iterabool {
 
 		explicit operator bool() const
 		{
-			return s and *s;
+			return !!s and !!*s;
 		}
 		value_type operator*() const
 		{

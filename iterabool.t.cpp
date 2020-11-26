@@ -694,8 +694,20 @@ int test_tuple_ = test_tuple();
 int test_flatten()
 {
 	{
-		//auto a[2] = { take(2, itoa(0)), take(3, iota(2)) };
-		//flatten t(iota(0), iota(1.));
+		auto i0 = take(2, iota(0)); // {0, 1}
+		auto i1 = take(3, iota(2)); // {2, 3, 4}
+		auto s = sequence(i0, i1);
+		auto f = flatten(s);
+		assert(f);
+		assert(*f == 0);
+		++f;
+		assert(f);
+		assert(*f == 1);
+		++f;
+		assert(f);
+		assert(*f == 2);
+		++f;
+
 	}
 
 	return 0;
