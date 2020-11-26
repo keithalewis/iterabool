@@ -558,6 +558,63 @@ int test_epsilon()
 int test_epsilon_d = test_epsilon<double>();
 int test_epsilon_f = test_epsilon<float>();
 
+int test_unit()
+{
+	{
+		auto i = take(3, iota(0));
+		auto u = unit(i);
+		auto u2(u);
+		u = u2;
+		assert(length(u) == 1);
+		assert(all(eq(*u, i)));
+		++u;
+		assert(!u);
+		++u;
+		assert(!u);
+	}
+
+	return 0;
+}
+int test_unit_ = test_unit();
+
+int test_sequence()
+{
+	{
+		auto i = take(3, iota(0));
+		auto s = sequence(i);
+		auto s2(s);
+		s = s2;
+		assert(length(s) == 1);
+		assert(all(eq(*s, i)));
+	}
+	{
+		auto i = take(3, iota(0));
+		auto s = sequence(i,i);
+		assert(length(s) == 2);
+		assert(all(eq(*s, i)));
+		++s;
+		assert(length(s) == 1);
+		assert(all(eq(*s, i)));
+		++s;
+		assert(length(s) == 0);
+		assert(!s);
+		++s;
+		assert(!s);
+	}
+	{
+		auto i = take(2, iota(0));
+		auto s = sequence(i, i);
+		auto f = flatten(s);
+		assert(length(f) == 4);
+		//auto mod3 = [](int i) { return i % 3; };
+		//assert(all(eq(flatten(s), apply(mod3, take(6, iota(0))))));
+	}
+
+
+	return 0;
+}
+int test_sequence_ = test_sequence();
+
 int test_concatenate()
 {
 	{
@@ -650,7 +707,7 @@ int main()
 	{
 		double x = 1;
 		auto xn = power(x);
-		auto n_ = factorial<double>{};
+		auto n_ = factorial(0.);
 		double expx = sum(epsilon(xn / n_));
 		double ex = exp(x);
 		ex -= expx;
@@ -664,7 +721,7 @@ int main()
 	{
 		double constexpr eps = std::numeric_limits<double>::epsilon();
 		double x = 1;
-		auto xn = power(x) / factorial(0.);
+		auto xn = power(x) / factorial(1.);
 		assert(exp(x) == sum(xn | xn > eps) - 2 * eps );
 	}
 	*/
