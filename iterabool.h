@@ -765,52 +765,6 @@ namespace iterabool {
 		}
 	};
 
-	// concatenate two sequences
-	template<forward_sequence S0, forward_sequence S1,
-		class T = std::common_type_t<typename S0::value_type, typename S1::value_type>>
-	class concatenate {
-		S0 s0;
-		S1 s1;
-	public:
-		using iterator_concept = std::forward_iterator_tag;
-		using iterator_category = std::forward_iterator_tag;
-		using value_type = T;
-
-		concatenate(const S0& s0, const S1& s1)
-			: s0(s0), s1(s1)
-		{ }
-		concatenate(const concatenate&) = default;
-		concatenate& operator=(const concatenate&) = default;
-		~concatenate()
-		{ }
-
-		auto operator<=>(const concatenate& s) const = default;
-
-		explicit operator bool() const
-		{
-			return s0 or s1;
-		}
-		value_type operator*() const
-		{
-			if (s0) {
-				return *s0;
-			}
-
-			return *s1;
-		}
-		concatenate& operator++()
-		{
-			if (s0) {
-				++s0;
-			}
-			else if (s1) {
-				++s1;
-			}
-
-			return *this;
-		}
-	};
-
 	// sequence of one sequence
 	template<forward_sequence S>
 	class unit {
@@ -834,7 +788,8 @@ namespace iterabool {
 		{
 			return !!s;
 		}
-		value_type operator*() const
+		// return reference
+		value_type& operator*() //const
 		{
 			return s;
 		}
@@ -844,32 +799,53 @@ namespace iterabool {
 
 			return *this;
 		}
+		/*
+		// post increment works on underlying
+		unit& operator++(int)
+		{
+			++s;;
+
+			return *this;
+		}
+		*/
 	};
 
-	// sequence of sequences
+	// sequence of sequences is a tuple of units
 	template<forward_sequence... Ss>
-	inline auto sequence(const Ss&... ss)
-	{
-		return (...,unit(ss));
-	}
-
-	// sequences tuples
-	template<forward_sequence... Ss>
-	class tuple {
-		std::tuple<Ss...> ss;
+	class sequence {
+		std::tuple<unit<Ss>...> ss;
 	public:
-		tuple(const Ss&... ss)
-			: ss(ss...)
-		{ }
-		tuple(const tuple&) = default;
-		tuple& operator=(const tuple&) = default;
-		~tuple()
-		{ }
-		// operator bool() const ???
-		// operator*() const ???
-		// operator++() ???
-	};
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = int;
 
+		sequence(const Ss&... ss)
+			: ss(unit(ss)...)
+		{ }
+		sequence(const sequence&) = default;
+		sequence& operator=(const sequence&) = default;
+		~sequence()
+		{ }
+
+		bool operator==(const sequence&) const
+		{
+			return true;
+		}
+
+		explicit operator bool() const
+		{
+			return !!(*std::get<sizeof...(Ss) - 1>(ss));
+		}
+		value_type operator*() const
+		{
+			return 0; // get<i>(ss);
+		}
+		sequence& operator++()
+		{
+			return *this;
+		}
+	};
+	/*
 	// sequence of sequences to a sequence
 	template<forward_sequence S>
 	class flatten {
@@ -895,17 +871,94 @@ namespace iterabool {
 		{
 			if (s) {
 				if (*s) {
-					++*s;
+					// increment unit sequence
+					++* s;
 				}
 				else {
+					// next unit
 					++s;
 				}
 			}
 
 			return *this;
 		}
-		
+
 	};
+	*/
+
+	/*
+
+	// return flatten(sequence(ss...))
+	// concatenate two sequences
+	template<forward_sequence S0, forward_sequence S1,
+		class T = std::common_type_t<typename S0::value_type, typename S1::value_type>>
+		class concatenate {
+		S0 s0;
+		S1 s1;
+		public:
+			using iterator_concept = std::forward_iterator_tag;
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = T;
+
+			concatenate(const S0& s0, const S1& s1)
+				: s0(s0), s1(s1)
+			{ }
+			concatenate(const concatenate&) = default;
+			concatenate& operator=(const concatenate&) = default;
+			~concatenate()
+			{ }
+
+			auto operator<=>(const concatenate& s) const = default;
+
+			explicit operator bool() const
+			{
+				return s0 or s1;
+			}
+			value_type operator*() const
+			{
+				if (s0) {
+					return *s0;
+				}
+
+				return *s1;
+			}
+			value_type& operator*()
+			{
+				if (s0) {
+					return *s0;
+				}
+
+				return *s1;
+			}
+			concatenate& operator++()
+			{
+				if (s0) {
+					++s0;
+				}
+				else if (s1) {
+					++s1;
+				}
+
+				return *this;
+			}
+	};
+	// sequences tuples
+	template<forward_sequence... Ss>
+	class tuple {
+		std::tuple<Ss...> ss;
+	public:
+		tuple(const Ss&... ss)
+			: ss(ss...)
+		{ }
+		tuple(const tuple&) = default;
+		tuple& operator=(const tuple&) = default;
+		~tuple()
+		{ }
+		// operator bool() const ???
+		// operator*() const ???
+		// operator++() ???
+	};
+	*/
 
 	/* make a sequence concurrent
 	template<sequence S>
@@ -983,8 +1036,10 @@ inline auto exp(const S& s)
 }
 // etc...
 
+/*
 template<iterabool::forward_sequence S0, iterabool::forward_sequence Ss>
 inline auto operator,(const S0& s0, const Ss& ss)
 {
 	return iterabool::concatenate(s0, ss);
 }
+*/
