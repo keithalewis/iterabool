@@ -838,9 +838,19 @@ namespace iterabool {
 		{
 			return s;
 		}
+		value_type& operator*()
+		{
+			return s;
+		}
 		unit& operator++()
 		{
 			s = empty(s);
+
+			return *this;
+		}
+		unit& operator++(int)
+		{
+			++s;
 
 			return *this;
 		}
@@ -885,7 +895,7 @@ namespace iterabool {
 
 		explicit operator bool() const
 		{
-			return !!s and !!*s;
+			return !!s;
 		}
 		value_type operator*() const
 		{
@@ -893,14 +903,7 @@ namespace iterabool {
 		}
 		flatten& operator++()
 		{
-			if (s) {
-				if (*s) {
-					++*s;
-				}
-				else {
-					++s;
-				}
-			}
+			++s; // increment sequence in unit
 
 			return *this;
 		}
