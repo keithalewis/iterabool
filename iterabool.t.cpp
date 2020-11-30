@@ -576,7 +576,7 @@ int test_unit()
 	return 0;
 }
 int test_unit_ = test_unit();
-
+#if 0
 int test_sequence()
 {
 	{
@@ -601,6 +601,7 @@ int test_sequence()
 		++s;
 		assert(!s);
 	}
+	/*
 	{
 		auto i = take(2, iota(0));
 		auto s = sequence(i, i);
@@ -609,7 +610,7 @@ int test_sequence()
 		//auto mod3 = [](int i) { return i % 3; };
 		//assert(all(eq(flatten(s), apply(mod3, take(6, iota(0))))));
 	}
-
+	*/
 
 	return 0;
 }
@@ -690,7 +691,8 @@ int test_tuple()
 	return 0;
 }
 int test_tuple_ = test_tuple();
-
+#endif // 0
+/*
 int test_flatten()
 {
 	{
@@ -713,7 +715,7 @@ int test_flatten()
 	return 0;
 }
 int test_flatten_ = test_flatten();
-
+*/
 int main()
 {
 	{
