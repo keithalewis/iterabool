@@ -21,6 +21,32 @@ namespace iterabool {
 		{ ++s } -> std::same_as<S&>;
 	};
 
+	template<typename T>
+	struct nil
+	{
+		using iterator_concept = std::forward_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = typename T;
+
+		bool operator==(const nil&) const
+		{
+			return false;
+		}
+
+		explicit operator bool() const
+		{
+			return false;
+		}
+		value_type operator*() const
+		{
+			return *(T*)nullptr; // access violation!
+		}
+		nil& operator++()
+		{
+			return *this;
+		}
+	};
+
 	// sequence with no elements used as end sentinal
 	template<forward_sequence S>
 	struct empty : public S {
@@ -29,9 +55,21 @@ namespace iterabool {
 		using value_type = typename S::value_type;
 
 		empty()
+			: S(nil<value_type>{}) // array of length 0
 		{ }
 		empty(const S&)
 		{ }
+
+		/*
+		operator S ()
+		{
+			return *(S*)this;
+		}
+		operator const S () const
+		{
+			return *(S*)this;
+		}
+		*/
 
 		bool operator==(const S& s) const
 		{
@@ -209,12 +247,13 @@ namespace iterabool {
 		~power()
 		{ }
 
-		//auto operator<=>(const power&) = default;
+		auto operator<=>(const power&) const = default;
+		/*
 		bool operator==(const power& i) const
 		{
 			return t == i.t and tn = i.tn;
 		}
-
+		*/
 		explicit operator bool() const
 		{
 			return true;
@@ -745,7 +784,7 @@ namespace iterabool {
 
 		bool operator==(const binop& b) const
 		{
-			return *this and b and operator*() == *b; // op???
+			return s == b.s and t == b.t;
 		}
 
 		explicit operator bool() const
@@ -793,30 +832,18 @@ namespace iterabool {
 		{
 			return s;
 		}
-		value_type& operator*()
-		{
-			return s;
-		}
 		unit& operator++()
 		{
 			s = empty(s);
 
 			return *this;
 		}
-		unit& operator++(int)
+		// reference to underlying
+		S& operator&()
 		{
-			++s;
-
-			return *this;
+			return s;
 		}
 	};
-
-	// sequence of sequences
-	template<forward_sequence... Ss>
-	inline auto sequence(const Ss&... ss)
-	{
-		return (...,unit(ss));
-	}
 
 	// sequence of sequences is a tuple of units
 	template<forward_sequence... Ss>
@@ -892,9 +919,7 @@ namespace iterabool {
 	};
 	*/
 
-	/*
-
-	// return flatten(sequence(ss...))
+	// ???return flatten(sequence(ss...))
 	// concatenate two sequences
 	template<forward_sequence S0, forward_sequence S1,
 		class T = std::common_type_t<typename S0::value_type, typename S1::value_type>>
@@ -928,14 +953,6 @@ namespace iterabool {
 
 				return *s1;
 			}
-			value_type& operator*()
-			{
-				if (s0) {
-					return *s0;
-				}
-
-				return *s1;
-			}
 			concatenate& operator++()
 			{
 				if (s0) {
@@ -948,6 +965,7 @@ namespace iterabool {
 				return *this;
 			}
 	};
+	/*
 	// sequences tuples
 	template<forward_sequence... Ss>
 	class tuple {
@@ -1042,10 +1060,8 @@ inline auto exp(const S& s)
 }
 // etc...
 
-/*
 template<iterabool::forward_sequence S0, iterabool::forward_sequence Ss>
 inline auto operator,(const S0& s0, const Ss& ss)
 {
 	return iterabool::concatenate(s0, ss);
 }
-*/

@@ -4,8 +4,42 @@
 
 using namespace iterabool;
 
+// first n elements are equal
+template<forward_sequence S0, forward_sequence S1>
+inline bool first(size_t n, S0 s0, S1 s1)
+{
+	return all(eq(take(n, s0), take(n, s1)));
+}
+
+int test_nil()
+{
+	{
+		auto i = nil<int>{};
+		auto i2 = i;
+		i = i2;
+		assert(!(i == i2));
+		assert(i != i2);
+		assert(!i);
+		assert(size(i) == 0);
+		++i;
+		assert(!i);
+		assert(size(i) == 0);
+
+		//int j = *i; // access violation
+	}
+
+	return 0;
+}
+int test_nil_ = test_nil();
+
 int test_empty()
 {
+	{
+		auto i = empty(array<int>{});
+		assert(!i);
+		assert(size(i) == 0);
+	}
+
 	{
 		auto i = take(0, iota(0));
 		assert(i == empty(i));
@@ -62,15 +96,7 @@ int test_duplicate_ = test_duplicate();
 int test_drop()
 {
 	{
-		assert(
-			all(
-				take(3, 
-					eq(drop(2, iota(0)), 
-			           iota(2)
-				    )
-			    )
-			)
-		);
+		assert(first(3, drop(2, iota(0)), iota(2)));
 	}
 
 	return 0;
@@ -533,7 +559,26 @@ int test_binop()
 		assert(s);
 		assert(*s == 1 * 2);
 	}
-
+	{
+		auto s = iota(0) + iota(1) * iota(2);
+		auto s2(s);
+		s = s2;
+		assert(s);
+		assert(*s == 0 + 1 * 2);
+		++s;
+		assert(s);
+		assert(*s == 1 + 2 * 3);
+	}
+	{
+		auto s = iota(0) + iota(1) * iota(2) - iota(3) % iota(4);
+		auto s2(s);
+		s = s2;
+		assert(s);
+		assert(*s == 0 + 1 * 2 - 3 % 4);
+		++s;
+		assert(s);
+		assert(*s == 1 + 2 * 3 - 4 % 5);
+	}
 	return 0;
 }
 int test_binop_ = test_binop();
@@ -615,7 +660,7 @@ int test_sequence()
 	return 0;
 }
 int test_sequence_ = test_sequence();
-
+#endif // 0
 int test_concatenate()
 {
 	{
@@ -675,13 +720,21 @@ int test_concatenate()
 	{
 		auto i = (take(2, iota<int>()), take(2, iota<int>(2)), take(2, iota<int>(4)));
 		auto i6 = take(6, iota<int>());
-		//bool b = std::equal(begin(i), end(i), begin(i6), end(i6));
+		//bool b = std::equal(begin(i), end(i), begin(i6));
+		assert(all(eq(i, i6)));
+	}
+
+	{
+		auto i = (nil<int>{}, iota(0));
+		assert(i);
+		assert(*i == 0);
+		assert(all(eq(take(3, i), take(3, iota(0)))));
 	}
 
 	return 0;
 }
 int test_concatenate_ = test_concatenate();
-
+#if 0
 int test_tuple()
 {
 	{
